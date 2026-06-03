@@ -1,0 +1,298 @@
+{
+  "name": "NovaCart_Finance_Agent_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Monthly Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [480, 60]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "annual_report_rag",
+        "toolDescription": "Retrieves NovaCart annual report data including revenue, margins, and KPIs",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list"
+        },
+        "options": {
+          "pineconeNamespace": "production",
+          "numberOfResults": 8
+        },
+        "prompt": "Retrieve all information about NovaCart annual revenue, gross margins, operating margins, EBITDA, year over year growth, and key financial KPIs from the annual report"
+      },
+      "id": "rag-annual-report-001",
+      "name": "RAG Annual Report",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreRetriever",
+      "typeVersion": 1,
+      "position": [160, 280],
+      "credentials": {
+        "pineconeApi": {
+          "id": "pinecone-account",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "product_catalog_rag",
+        "toolDescription": "Retrieves NovaCart product catalog data including SKU mix and categories",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list"
+        },
+        "options": {
+          "pineconeNamespace": "production",
+          "numberOfResults": 8
+        },
+        "prompt": "Retrieve all information about NovaCart product catalog, SKU list, product categories, pricing, and product mix from the product catalog"
+      },
+      "id": "rag-product-catalog-001",
+      "name": "RAG Product Catalog",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreRetriever",
+      "typeVersion": 1,
+      "position": [480, 280],
+      "credentials": {
+        "pineconeApi": {
+          "id": "pinecone-account",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "sku_sales_rag",
+        "toolDescription": "Retrieves NovaCart SKU weekly sales data, conversion rates and revenue trends",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list"
+        },
+        "options": {
+          "pineconeNamespace": "production",
+          "numberOfResults": 10
+        },
+        "prompt": "Retrieve all information about NovaCart weekly sales data, SKU level revenue, conversion rates, 3 year trends, top performing SKUs and bottom performing SKUs"
+      },
+      "id": "rag-sku-sales-001",
+      "name": "RAG SKU Sales",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreRetriever",
+      "typeVersion": 1,
+      "position": [800, 280],
+      "credentials": {
+        "pineconeApi": {
+          "id": "pinecone-account",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    source: 'Deloitte 2026 Semiconductor Industry Outlook',\n    content: `DELOITTE 2026 SEMICONDUCTOR INDUSTRY OUTLOOK - KEY SIGNALS FOR NOVACART:\n\n1. MARKET SIZE: Global semiconductor market projected at $975B in 2026. AI chips represent approximately $500B (50% of revenue), driven by datacenter demand.\n\n2. MEMORY PRICE SPIKE: Memory prices spiking up to 50% by mid-2026. This directly impacts NovaCart COGS for any consumer electronics, computing, or smart device SKUs.\n\n3. PC AND SMARTPHONE DEMAND DECLINING: Consumer demand for PCs and smartphones is softening due to rising memory costs. NovaCart SKUs in these categories face headwinds.\n\n4. SUPPLY CHAIN CONCENTRATION RISKS: Heavy reliance on Taiwan-based manufacturing. Geopolitical tensions create potential for supply disruptions affecting NovaCart product availability.\n\n5. DEMAND CORRECTION RISK 2027-2028: Risk of AI-driven demand correction if ROI does not materialize. Could signal broader consumer electronics slowdown affecting NovaCart revenue.\n\n6. COMPONENT COST HEADWINDS: Rising component costs will compress margins for e-commerce companies selling electronics. NovaCart should monitor gross margin trends closely.`\n  }\n}]"
+      },
+      "id": "ext-deloitte-semi-001",
+      "name": "External Signal 1 - Deloitte Semi 2026",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    source: 'Deloitte Tech Trends 2026',\n    content: `DELOITTE TECH TRENDS 2026 - KEY SIGNALS FOR NOVACART:\n\n1. AGENTIC AI ADOPTION: Only 11% of organizations have agentic AI in production. 35% have no agentic strategy. Gartner predicts 40% of agentic projects will fail by 2027. NovaCart is ahead of the curve with this reporting agent.\n\n2. AI INFRASTRUCTURE COSTS EXPLODING: Inference costs dropped 280x but total AI bills are exploding due to volume. NovaCart must budget carefully for AI operational costs.\n\n3. HYBRID ARCHITECTURE IS THE ANSWER: Leaders recommend hybrid cloud, on-premise, and edge architecture to manage AI costs. NovaCart should plan for hybrid infrastructure as AI usage scales.\n\n4. REDESIGN PROCESSES NOT JUST AUTOMATE: Key insight from Deloitte - companies that simply automate existing processes see limited ROI. NovaCart should redesign finance reporting processes around AI capabilities.\n\n5. NEW AGENT PROTOCOLS: MCP (Anthropic), A2A (Google), ACP protocols now available. NovaCart technology investments should account for these emerging standards.\n\n6. CFO CONTEXT: AI infrastructure costs are a growing line item. This finance report itself represents NovaCart investment in AI-driven operational efficiency.`\n  }\n}]"
+      },
+      "id": "ext-deloitte-tech-001",
+      "name": "External Signal 2 - Deloitte Tech 2026",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    source: 'McKinsey Technology Trends Outlook 2025',\n    content: `MCKINSEY TECHNOLOGY TRENDS OUTLOOK 2025 - KEY SIGNALS FOR NOVACART:\n\n1. AGENTIC AI FASTEST GROWING TREND: Adoption score 2 (experimentation phase), but fastest growing trend at +985% job posting growth YoY. NovaCart is investing at the right time.\n\n2. AI ADOPTION BENCHMARKS: 78% of organizations use AI in at least one function. 92% plan more investment. Only 1% are fully mature. NovaCart is in the majority investing phase.\n\n3. PRODUCTIVITY GAINS VALIDATED: QuantumBlack case study shows credit analyst productivity up 60% with multi-agent workflows. Similar gains possible for NovaCart finance team.\n\n4. ROBOTICS IN E-COMMERCE ACCELERATING: GXO Logistics cited as example of robotics adoption in e-commerce and logistics. Supply chain automation is a competitive necessity for e-commerce players like NovaCart.\n\n5. APPLICATION-SPECIFIC SEMICONDUCTORS: New trend creating supply chain and geopolitical risks. NovaCart procurement must monitor chip availability for smart and connected products.\n\n6. EQUITY INVESTMENT SIGNAL: $1.1B in agentic AI equity investment in 2024. Market is validating AI agent technology - NovaCart is on the right strategic path.`\n  }\n}]"
+      },
+      "id": "ext-mckinsey-001",
+      "name": "External Signal 3 - McKinsey 2025",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    source: 'KPMG 2025 Global Semiconductor Industry Outlook',\n    content: `KPMG 2025 GLOBAL SEMICONDUCTOR INDUSTRY OUTLOOK - KEY SIGNALS FOR NOVACART:\n\n1. AI IS NOW #1 REVENUE DRIVER: For the first time AI has become the most important application driving semiconductor revenue (67% of executives rate it more important). Cloud and data centers moved to #2. This signals sustained AI infrastructure investment benefiting NovaCart technology stack.\n\n2. CONSUMER ELECTRONICS SOFTENING: Consumer electronics ranked 5th among revenue drivers at only 46% high importance, down from prior years. If NovaCart carries consumer electronics SKUs, demand headwinds are a real risk to flag.\n\n3. AUTOMOTIVE DECLINING: Automotive fell from #1 to #4 revenue driver. Reflects EV demand slowdown and broader automotive softness. NovaCart automotive accessories category may face headwinds.\n\n4. TARIFF IMPACT ON COGS: 25% additional tariff on China-sourced products already in effect. Broader Trump tariffs likely in 2025. Many e-commerce SKUs are China-sourced - direct margin compression risk for NovaCart.\n\n5. UNCERTAIN CUSTOMER DEMAND IS #1 CONCERN: 67% of semiconductor executives cite uncertain customer demand as the largest economic factor. This validates the need for NovaCart demand forecasting and this finance reporting agent.\n\n6. MEMORY AND GPU GROWTH: Microprocessors/GPUs (65% high opportunity) and Memory/DRAM (49% high opportunity) remain top growth product categories. NovaCart tech infrastructure benefits from innovation in these areas.\n\n7. INDUSTRY CONFIDENCE INDEX: Rose to 59 in 2025 from 54 in 2024. Overall positive outlook suggests stable technology supply environment for NovaCart procurement.`\n  }\n}]"
+      },
+      "id": "ext-kpmg-001",
+      "name": "External Signal 4 - KPMG 2025",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 500]
+    },
+    {
+      "parameters": {
+        "numberInputs": 7
+      },
+      "id": "merge-node-001",
+      "name": "Merge All Inputs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [480, 700]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 2000
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are NovaCart's AI-powered Finance Reporting Agent. Your job is to generate a professional, CFO-ready monthly finance and product performance report by synthesizing internal business data with external market intelligence.\n\nYou will receive the following inputs:\n1. Annual Report context — revenue, margins, and company KPIs\n2. Product Catalog context — SKU mix, product categories, pricing\n3. SKU Sales context — 3-year weekly revenue trends and conversion data\n4. External Signal 1 — Deloitte 2026 Semiconductor Industry Outlook\n5. External Signal 2 — Deloitte Tech Trends 2026\n6. External Signal 3 — McKinsey Technology Trends Outlook 2025\n7. External Signal 4 — KPMG 2025 Global Semiconductor Industry Outlook\n\n═══════════════════════════════════════════════\nREPORT STRUCTURE — follow this exact order\n═══════════════════════════════════════════════\n\n## 1. Executive Summary\n- 3-5 sentences maximum\n- State overall revenue performance vs prior period\n- Call out the single most important risk and single most important opportunity\n- Tone: direct, confident, boardroom-ready\n\n## 2. Revenue Analysis\n- Total revenue for the period with % change vs prior month and prior year\n- Gross margin trend — improving, stable, or declining, with a brief reason\n- Revenue by top product category — ranked highest to lowest\n- Any notable anomalies or one-time items\n\n## 3. Top 5 SKUs — Momentum Leaders\nFor each SKU provide:\n- SKU name and category\n- Revenue this period\n- % change vs prior period\n- 1-sentence insight on why it is performing well\n\n## 4. Bottom 5 SKUs — Underperformers\nFor each SKU provide:\n- SKU name and category\n- Revenue this period\n- % change vs prior period\n- 1-sentence recommended action (discount, bundle, delist, or investigate)\n\n## 5. External Market Signals\nSynthesize all 4 external research documents into 4-6 bullet points.\nEach bullet must:\n- Reference the source by name (e.g. Per KPMG 2025...)\n- State the market fact or trend\n- Connect it directly to a NovaCart risk or opportunity\nFocus only on signals relevant to e-commerce, consumer electronics, supply chain, AI investment, and demand trends.\nDo not summarize the reports — extract only what matters to NovaCart.\n\n## 6. Risk Register\nList 3-5 risks in a table format:\n| Risk | Likelihood | Impact | Mitigation |\nEach risk must be grounded in either internal data or an external signal.\nLikelihood and Impact: High / Medium / Low only.\n\n## 7. Strategic Recommendations\nProvide exactly 3 recommendations ranked by priority.\nFormat each as:\n- RECOMMENDATION: [one clear action]\n- RATIONALE: [why, grounded in data from sections above]\n- OWNER: [CFO / Product / Procurement / Marketing]\n- TIMELINE: [Immediate / 30 days / 90 days]\n\n═══════════════════════════════════════════════\nFORMATTING RULES\n═══════════════════════════════════════════════\n- Use markdown headers (##) for each section\n- Use tables where specified\n- Numbers must include $ signs, % signs, and commas\n- Do not use vague language — every claim must reference a data point\n- Do not hallucinate data — if a value is missing from context, write Data not available in current period rather than estimating\n- Do not include any explanation of your process or methodology\n- Report length: 600-900 words excluding tables\n- Tone: Executive briefing — precise, neutral, action-oriented\n\n═══════════════════════════════════════════════\nCRITICAL RULES\n═══════════════════════════════════════════════\n- Internal data always takes priority over external signals\n- External signals are context only — never override internal numbers\n- If internal data contradicts an external trend, flag it explicitly in the Risk Register with the label [DIVERGENCE DETECTED]\n- Always end with the Strategic Recommendations section — never truncate it\n- Date the report: Report Period: [current month, current year]"
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Generate the monthly NovaCart Finance Report using all the following data:\\n\\n' + $input.all().map(item => JSON.stringify(item.json)).join('\\n\\n') }}"
+            }
+          ]
+        }
+      },
+      "id": "ai-synthesis-agent-001",
+      "name": "AI Synthesis Agent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [480, 860],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-account",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "jattaaihq@gmail.com",
+        "subject": "=NovaCart Monthly Finance Report — {{ $now.format('MMMM YYYY') }}",
+        "emailType": "html",
+        "message": "=<html>\n<head>\n<style>\nbody { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }\nh1 { color: #1B2A4A; border-bottom: 3px solid #C9A84C; padding-bottom: 10px; }\nh2 { color: #1B2A4A; margin-top: 30px; }\ntable { width: 100%; border-collapse: collapse; margin: 15px 0; }\nth { background-color: #1B2A4A; color: #C9A84C; padding: 10px; text-align: left; }\ntd { padding: 8px 10px; border-bottom: 1px solid #ddd; }\ntr:nth-child(even) { background-color: #f5f0e8; }\n.header-bar { background-color: #1B2A4A; color: #C9A84C; padding: 20px; margin-bottom: 20px; }\n.footer { margin-top: 40px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 12px; color: #888; }\n.report-content { line-height: 1.6; }\n</style>\n</head>\n<body>\n<div class='header-bar'>\n<h1 style='color:#C9A84C; border:none; margin:0;'>NovaCart — Monthly Finance Report</h1>\n<p style='margin:5px 0 0; color:#fff;'>{{ $now.format('MMMM YYYY') }} | Generated by AI Finance Agent</p>\n</div>\n<div class='report-content'>\n{{ $json.message.content }}\n</div>\n<div class='footer'>\n<p>This report was automatically generated by the NovaCart Finance Reporting Agent. Data sourced from internal Pinecone knowledge base and external market intelligence. For questions contact jattaaihq@gmail.com</p>\n</div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "gmail-delivery-001",
+      "name": "Gmail Delivery",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [300, 1040],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "google-drive-oauth2",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#finance-reports",
+        "text": "=:bar_chart: *NovaCart Monthly Finance Report — {{ $now.format('MMMM YYYY') }}*\n\nThe automated finance report has been generated and sent to jattaaihq@gmail.com\n\n_Generated by NovaCart Finance Reporting Agent_"
+      },
+      "id": "slack-notify-001",
+      "name": "Slack Notification (Optional)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [660, 1040]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first()?.json?.error || 'Unknown error occurred';\nconst timestamp = new Date().toISOString();\nconsole.log(`NovaCart Finance Agent Error at ${timestamp}: ${error}`);\nreturn [{\n  json: {\n    error: error,\n    timestamp: timestamp,\n    workflow: 'NovaCart_Finance_Agent_v1',\n    action: 'Send error notification email'\n  }\n}];"
+      },
+      "id": "error-handler-001",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 1200],
+      "onError": "continueErrorOutput"
+    }
+  ],
+  "connections": {
+    "Monthly Schedule Trigger": {
+      "main": [
+        [
+          {"node": "RAG Annual Report", "type": "main", "index": 0},
+          {"node": "RAG Product Catalog", "type": "main", "index": 0},
+          {"node": "RAG SKU Sales", "type": "main", "index": 0},
+          {"node": "External Signal 1 - Deloitte Semi 2026", "type": "main", "index": 0},
+          {"node": "External Signal 2 - Deloitte Tech 2026", "type": "main", "index": 0},
+          {"node": "External Signal 3 - McKinsey 2025", "type": "main", "index": 0},
+          {"node": "External Signal 4 - KPMG 2025", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "RAG Annual Report": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 0}]]
+    },
+    "RAG Product Catalog": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 1}]]
+    },
+    "RAG SKU Sales": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 2}]]
+    },
+    "External Signal 1 - Deloitte Semi 2026": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 3}]]
+    },
+    "External Signal 2 - Deloitte Tech 2026": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 4}]]
+    },
+    "External Signal 3 - McKinsey 2025": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 5}]]
+    },
+    "External Signal 4 - KPMG 2025": {
+      "main": [[{"node": "Merge All Inputs", "type": "main", "index": 6}]]
+    },
+    "Merge All Inputs": {
+      "main": [[{"node": "AI Synthesis Agent", "type": "main", "index": 0}]]
+    },
+    "AI Synthesis Agent": {
+      "main": [
+        [
+          {"node": "Gmail Delivery", "type": "main", "index": 0},
+          {"node": "Slack Notification (Optional)", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Gmail Delivery": {
+      "main": [[{"node": "Error Handler", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "novacart-finance-agent"
+  },
+  "pinData": {},
+  "versionId": "novacart-v1-2025",
+  "triggerCount": 1,
+  "tags": []
+}
