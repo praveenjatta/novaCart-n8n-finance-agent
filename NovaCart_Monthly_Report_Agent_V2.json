@@ -1,0 +1,343 @@
+{
+  "name": "NovaCart_Monthly_Report_Agent_V2",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Compute previous calendar month (reporting period)\nconst now = new Date();\nconst firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);\nconst lastOfPrevMonth = new Date(firstOfThisMonth.getTime() - 1);\n\nconst reportYear = lastOfPrevMonth.getFullYear();\nconst reportMonthIndex = lastOfPrevMonth.getMonth(); // 0-11\nconst reportMonth = reportMonthIndex + 1; // 1-12\n\nconst monthNames = [\n  'January','February','March','April','May','June',\n  'July','August','September','October','November','December'\n];\n\nconst reportMonthName = monthNames[reportMonthIndex];\n\nconst periodStart = new Date(reportYear, reportMonthIndex, 1);\nconst periodEnd = new Date(reportYear, reportMonthIndex + 1, 0);\n\nconst fmt = (d) => d.toISOString().slice(0, 10);\n\nreturn [{\n  json: {\n    generated_at: now.toISOString(),\n    report_year: reportYear,\n    report_month: reportMonth,\n    report_month_name: reportMonthName,\n    period_start: fmt(periodStart),\n    period_end: fmt(periodEnd)\n  }\n}];"
+      },
+      "id": "c0a8e653-b1f9-4f56-a035-34ea03764ef5",
+      "name": "Set Reporting Period",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the monthly reporting request for the AI Agent\nconst meta = $json;\n\nconst chatInput = `Create the **Monthly Financial Standing Report** for NovaCart for **${meta.report_month_name} ${meta.report_year}** (period ${meta.period_start} to ${meta.period_end}).\\n\\n` +\n`Requirements:\\n` +\n`1) Use the Internal Finance vector store tool to pull internal performance (sales, units, revenue, margins, anomalies) for the month.\\n` +\n`2) Use the External Market Reports vector store tool to pull market trends, competitor moves, macro conditions, and any relevant category insights.\\n` +\n`3) Correlate internal performance with external conditions. Explicitly call out what likely drove results.\\n` +\n`4) Provide a clear narrative plus tables where appropriate.\\n` +\n`5) Output MUST be valid HTML (no Markdown, no code fences).\\n\\n` +\n`Focus on decision-useful insights for executives. If any key data is missing, state assumptions and data gaps clearly.`;\n\nconst sessionId = `monthly_finance_report_${meta.report_year}_${String(meta.report_month).padStart(2,'0')}`;\n\nreturn [{ json: { ...meta, sessionId, chatInput, text: chatInput } }];"
+      },
+      "id": "285d38d7-14e2-4ba7-8953-de2b7763c862",
+      "name": "Build Report Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a senior finance & strategy analyst writing for NovaCart executives.\n\nYou MUST:\n- Use BOTH tools at least once: (1) Internal Finance Vector Store Tool and (2) External Market Reports Vector Store Tool.\n- Ground all key claims in retrieved evidence.\n- If evidence is insufficient for a claim, say so explicitly.\n\nOutput requirements:\n- Return a SINGLE HTML string only (no Markdown, no code fences).\n- Use simple inline CSS for email readability.\n- Structure the report with these sections:\n  1) Title + reporting period\n  2) Executive Summary (3–6 bullets)\n  3) KPI Dashboard (table)\n  4) Performance Deep Dive (by product/category and any available dimensions)\n  5) Market Context (external trends)\n  6) Drivers & Correlations (internal vs external)\n  7) Risks, Opportunities, Recommendations (bullets)\n  8) Sources (list the retrieved sources with file_name and drive_url when available)\n\nWhen citing, include the source in parentheses, e.g. (Source: <file_name> <drive_url>)."
+        }
+      },
+      "id": "1528d2aa-ae39-4145-9d21-76404c11b125",
+      "name": "AI Finance Reporting Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "d2da0c4a-0454-4189-b6f6-cd852740b03d",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        656
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VScJn7R0SgP6BpHi",
+          "name": "novacart-openai-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to retrieve NovaCart INTERNAL product performance data (sales metrics, units, revenue, margins, anomalies, operational notes) for the requested month.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list",
+          "cachedResultName": "nova-cart-n8n"
+        },
+        "topK": 12,
+        "options": {
+          "pineconeNamespace": "int-finance-data"
+        }
+      },
+      "id": "365c13ea-2857-4b91-94f4-379cb6126cd6",
+      "name": "Pinecone Tool - Internal",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        640
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "3bc0nsB7FjutjGWP",
+          "name": "novacart-pinecone-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to retrieve insights from EXTERNAL market report PDFs (industry trends, competitor moves, macro signals, forecasts) relevant to NovaCart's performance.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list",
+          "cachedResultName": "nova-cart-n8n"
+        },
+        "topK": 12,
+        "options": {
+          "pineconeNamespace": "ext-market-reports"
+        }
+      },
+      "id": "765be56b-3d6e-456c-9be4-d1ff223c819d",
+      "name": "Pinecone Tool - External",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        640
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "3bc0nsB7FjutjGWP",
+          "name": "novacart-pinecone-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare email payload (compatible with n8n Code node v2)\n\n// 1) Pull the reporting period metadata from the earlier node\nconst metaItems = $items('Set Reporting Period');\nconst meta = (metaItems?.[0]?.json) ?? {};\n\n// 2) The AI Agent output is the input to THIS node\nconst agentOut = $input.first().json;\n\n// Try common output fields (Agent nodes vary by version/config)\nlet html =\n  agentOut.output ??\n  agentOut.text ??\n  agentOut.response ??\n  agentOut.answer ??\n  agentOut.result ??\n  agentOut;\n\n// Ensure it's a string\nif (typeof html !== 'string') {\n  html = JSON.stringify(html, null, 2);\n}\n\n// Strip accidental Markdown code fences if the model wrapped HTML\nhtml = html.replace(/^```(?:html)?\\s*/i, '').replace(/\\s*```$/i, '');\n\n// If it doesn't look like HTML, wrap in <pre> so the email still renders legibly\nif (!/<[a-z][\\s\\S]*>/i.test(html)) {\n  const escape = (s) => s\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;');\n  html = `<pre style=\"white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;\">${escape(html)}</pre>`;\n}\n\nconst month = meta.report_month_name ?? '';\nconst year = meta.report_year ?? '';\nconst subject = `NovaCart Monthly Financial Standing Report — ${month} ${year}`.trim();\n\nreturn [{\n  json: {\n    ...meta,\n    report_subject: subject,\n    report_html: html\n  }\n}];"
+      },
+      "id": "9d274263-a903-4f21-bfd6-7e301f2ebde4",
+      "name": "Prepare Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## W2 Assignment: Monthly Financial Standing Report (Email)\n\n**This workflow generates the report and emails it.**\n\n### Before activating:\n1) Run both ingestion workflows at least once (internal + external).\n2) In **Pinecone Tool - Internal** and **Pinecone Tool - External**, confirm the index is `novacart-finance-assignment` and namespaces are `internal` / `external`.\n3) In **Send Email**, set:\n   - From Email\n   - To Email(s)\n   - SMTP credentials\n4) In **Schedule Trigger**, set it to run on the **1st of every month** (choose your timezone).\n\nThen activate the workflow.\n",
+        "height": 1104,
+        "width": 2676,
+        "color": 5
+      },
+      "id": "87f32c3e-e153-4fd3-8e78-68abacdd5acd",
+      "name": "Sticky Note (Setup)1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -576,
+        -64
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "id": "4579927e-ab44-4cd7-8c5e-0c1a06d61553",
+      "name": "Schedule Trigger2",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {
+          "dimensions": 1024
+        }
+      },
+      "id": "2064432e-7051-4840-920b-0dde6782179e",
+      "name": "Embeddings OpenAI2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        880
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VScJn7R0SgP6BpHi",
+          "name": "novacart-openai-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "jattaaihq@gmail.com",
+        "subject": "={{ $json.report_subject }}",
+        "message": "={{ $json.report_html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        400
+      ],
+      "id": "d5539078-a74b-40ac-93b6-96e51bfcaf65",
+      "name": "Send a message",
+      "webhookId": "d9dcd3e7-57f6-422f-ae0c-77a2fe116d74",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cyLqSEH0p5HBhVlI",
+          "name": "Gmail JattaAI"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Set Reporting Period": {
+      "main": [
+        [
+          {
+            "node": "Build Report Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report Request": {
+      "main": [
+        [
+          {
+            "node": "AI Finance Reporting Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Finance Reporting Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Finance Reporting Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Tool - Internal": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Finance Reporting Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Tool - External": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Finance Reporting Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Set Reporting Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Tool - Internal",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Pinecone Tool - External",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2bdf6ea5-5f1d-4e1c-a61f-0b4a1de047fc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e5670386fb27fff3f1086187285fc91d1c11d4e4aff893cfb79670ff5ab150a"
+  },
+  "id": "gxyWMNNoPItkENbs",
+  "tags": []
+}

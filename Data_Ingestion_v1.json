@@ -1,0 +1,297 @@
+{
+  "name": "Data_Ingestion_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Ingestion Pipeline (Offline/Retrieval)\n",
+        "height": 816,
+        "width": 2136
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -16,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "ff5961c1-c5c9-40c8-9c4b-2ad1f5032768",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        208
+      ],
+      "id": "5f9204a1-40ad-479b-9c69-75dd90813c1c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const text = item.json.text || item.json.content || '';\n  const source = item.json.fileName || item.json.name || 'document';\n  const chunkSize = 1000;\n  const overlap = 100;\n  const step = chunkSize - overlap;\n\n  for (let i = 0; i < text.length; i += step) {\n    const chunk = text.slice(i, i + chunkSize);\n    if (chunk.trim().length > 20) {\n      results.push({\n        json: {\n          pageContent: chunk,\n          metadata: { source: source }\n        }\n      });\n    }\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        208
+      ],
+      "id": "f6804aab-6099-417e-84e9-b7817721c11a",
+      "name": "Chunk Text (500/50)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert chunks to format Pinecone HTTP API expects\nconst items = $input.all();\nreturn items.map(item => ({\n  json: {\n    pageContent: item.json.pageContent,\n    metadata: item.json.metadata\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        208
+      ],
+      "id": "c5395780-ceab-4a9c-b046-fa4724af31c6",
+      "name": "Format for Pinecone"
+    },
+    {
+      "parameters": {
+        "dataType": "text",
+        "textSplittingMode": "none",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        448
+      ],
+      "id": "960d5301-6386-4769-af6c-918f905b2d9a",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {
+          "dimensions": 1024
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1232,
+        448
+      ],
+      "id": "fe5f82ae-992e-4f63-a280-d6d4fff46d4b",
+      "name": "Embeddings OpenAI - NovaCart",
+      "credentials": {
+        "openAiApi": {
+          "id": "VScJn7R0SgP6BpHi",
+          "name": "novacart-openai-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nova-cart-n8n",
+          "mode": "list",
+          "cachedResultName": "nova-cart-n8n"
+        },
+        "options": {
+          "pineconeNamespace": "int-finance-data"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1776,
+        208
+      ],
+      "id": "908e0961-60be-453b-aec0-dbe1a467c3f6",
+      "name": "Pinecone - NovaCart Internal",
+      "credentials": {
+        "pineconeApi": {
+          "id": "3bc0nsB7FjutjGWP",
+          "name": "novacart-pinecone-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "=https://drive.google.com/drive/u/2/folders/1elLqxBydD_tHpt-4mjgV1WNrCZPR7dY7",
+            "mode": "url"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        208
+      ],
+      "id": "e122eee7-afd0-4fd7-bcd8-b1aef620479f",
+      "name": "GDrive - List Files",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Y4wb1QuAeL63fOiv",
+          "name": "Google JattaAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        688,
+        208
+      ],
+      "id": "1a20c615-debc-409c-9fcc-7e77d1f38535",
+      "name": "GDrive - Download File",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Y4wb1QuAeL63fOiv",
+          "name": "Google JattaAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        960,
+        208
+      ],
+      "id": "783b6b7b-b4a5-433b-9b2a-d2886c52fea3",
+      "name": "Extract PDF - NovaCart"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "GDrive - List Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Text (500/50)": {
+      "main": [
+        [
+          {
+            "node": "Format for Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for Pinecone": {
+      "main": [
+        [
+          {
+            "node": "Pinecone - NovaCart Internal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone - NovaCart Internal",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI - NovaCart": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone - NovaCart Internal",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GDrive - List Files": {
+      "main": [
+        [
+          {
+            "node": "GDrive - Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GDrive - Download File": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF - NovaCart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF - NovaCart": {
+      "main": [
+        [
+          {
+            "node": "Chunk Text (500/50)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b63f2e31-095c-4218-8e64-c91a16a5e892",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e5670386fb27fff3f1086187285fc91d1c11d4e4aff893cfb79670ff5ab150a"
+  },
+  "id": "uLIk8jVbU9kRyJrI",
+  "tags": []
+}

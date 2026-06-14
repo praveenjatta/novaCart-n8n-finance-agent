@@ -1,0 +1,316 @@
+{
+  "name": "Data_Ingestion_Internal_v2",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "RAG Data Ingestion",
+        "formDescription": "RAG Data Ingestion for the knowledge store",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Select Files to be uploaded",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -592,
+        544
+      ],
+      "id": "c7ffc09a-9089-4c54-8881-18b3aa45a4a0",
+      "name": "On form submission",
+      "webhookId": "24b85083-5a72-4d89-a6df-5085afd3c85c"
+    },
+    {
+      "parameters": {
+        "content": "## Ingestion Pipeline (Offline/Retrieval)\n",
+        "height": 1008,
+        "width": 2176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        16,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "1135fc03-a13d-4b88-a32c-579a69a05db4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        272
+      ],
+      "id": "919d04df-c5c1-4b75-8c88-7f22e7f09794",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        704,
+        256
+      ],
+      "id": "53e589b9-2bc0-4a12-b351-f7ac1afd67ad",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Y4wb1QuAeL63fOiv",
+          "name": "Google JattaAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {
+          "dimensions": 1024
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        592
+      ],
+      "id": "dd3e8f80-d971-441b-9180-28ab01702ca0",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "VScJn7R0SgP6BpHi",
+          "name": "novacart-openai-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "novacart",
+          "mode": "list",
+          "cachedResultName": "novacart"
+        },
+        "options": {
+          "pineconeNamespace": "int-finance-data"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        240
+      ],
+      "id": "28039f5f-b747-4db9-b76c-f86411146769",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "3bc0nsB7FjutjGWP",
+          "name": "novacart-pinecone-jattaai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        480
+      ],
+      "id": "a8c96720-8f00-4d62-bee5-c83c5fbffbbf",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        784
+      ],
+      "id": "f24d7383-b498-486a-a0df-5841475d2a8d",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "jsCode": "let results = [];\n\nfor (const item of $input.all()) {\n    for (key of Object.keys(item.binary)) {\n        results.push({\n            json: {\n                fileName: item.binary[key].fileName\n            },\n            binary: {\n                data: item.binary[key],\n            }\n        });\n    }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        544
+      ],
+      "id": "b93401a6-8687-4f20-b258-8d7d3fa29856",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "content": "Alternate option: Manual Trigger\nConnect the code Element to Switch Element",
+        "height": 400,
+        "width": 576,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        368
+      ],
+      "id": "8b83191c-c977-4d53-9f78-30c6053e2d4f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1elLqxBydD_tHpt-4mjgV1WNrCZPR7dY7",
+            "mode": "list",
+            "cachedResultName": "Novacart_n8n_Internal",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1elLqxBydD_tHpt-4mjgV1WNrCZPR7dY7"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        432,
+        256
+      ],
+      "id": "b9810755-7e56-44e8-8f94-b6671b7a9003",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Y4wb1QuAeL63fOiv",
+          "name": "Google JattaAI"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f834d369-0b27-4cff-aa54-9a6520b2e797",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e5670386fb27fff3f1086187285fc91d1c11d4e4aff893cfb79670ff5ab150a"
+  },
+  "id": "QX3FUCNadEHK21UO",
+  "tags": []
+}
